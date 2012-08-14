@@ -2140,7 +2140,7 @@ void FileList::OffsetItr(INT offsetItr, vector<string> & vStrItems)
 
 void FileList::UpdateToolBarElements(void)
 {
-	_pToolBar->enable(_idRedo, _itrPos != _vDirStack.end() - 1);
+	_pToolBar->enable(_idRedo, !_vDirStack.empty() && _itrPos != _vDirStack.end() - 1);
 	_pToolBar->enable(_idUndo, _itrPos != _vDirStack.begin());
 }
 

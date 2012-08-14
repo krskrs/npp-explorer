@@ -133,7 +133,7 @@ void ComboOrgi::selectComboText(LPTSTR pszText)
 	::SendMessage(_hCombo, CB_SETCURSEL, lResult, 0);
 }
 
-void ComboOrgi::setComboList(vector<string> vStrList)
+void ComboOrgi::setComboList(vector<string> & vStrList)
 {
 	size_t	iCnt	= vStrList.size();
 
