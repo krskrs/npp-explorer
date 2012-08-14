@@ -33,13 +33,11 @@ class SnapOpenDlg : public StaticDialog
 public:
 	SnapOpenDlg() : StaticDialog() {};
 	
-	void init(HINSTANCE hInst, NppData nppData)
-	{
-		_nppData = nppData;
-		Window::init(hInst, nppData._nppHandle);
-	};
+	void init(HINSTANCE hInst, NppData nppData);
+	UINT doDialog();
 
-		UINT doDialog();
+	wstring GetRootPath();
+	void SetRootPath(const wstring rootPath);
 
 	virtual void destroy() {};
 
@@ -54,10 +52,14 @@ private:
 	vector<wstring> files;
 	WNDPROC wpOrigEditProc;
 	int rootPathLen;
+	bool _mustRefresh;
+	wstring	rootPath;
+	wstring _curSelText;
 
 	void findFiles();
 	void findFilesRecursively(LPCTSTR lpFolder);
 	void populateResultList();
+	wstring getSelectedText();
 	static LRESULT APIENTRY editSubclassProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	LRESULT APIENTRY run_editSubclassProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	wstring getRoot();

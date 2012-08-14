@@ -26,6 +26,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <shlobj.h>
 
 
+	void SnapOpenDlg::init(HINSTANCE hInst, NppData nppData)
+	{
+		_nppData = nppData;
+		Window::init(hInst, nppData._nppHandle);
+		_mustRefresh = true;
+	};
+
 // Set a call back with the handle after init to set the path.
 // http://msdn.microsoft.com/library/default.asp?url=/library/en-us/shellcc/platform/shell/reference/callbackfunctions/browsecallbackproc.asp
 static int __stdcall BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM, LPARAM pData)
@@ -50,9 +57,17 @@ BOOL CALLBACK SnapOpenDlg::run_dlgProc(HWND hwnd, UINT Message, WPARAM wParam, L
 		{
 			string rootPath = getRoot();
 			rootPathLen = rootPath.size();
-
+			
 			goToCenter();
-			findFiles();
+			if (_mustRefresh) findFiles();
+			_curSelText = getSelectedText();
+					//::MessageBox(_hParent, _T("Goo: "), _T("Error"), MB_OK);
+		
+			if (!_curSelText.empty()) {
+				::MessageBox(_hParent, (_T("Selection: ") + _curSelText).c_str(), _T("Error"), MB_OK);
+				Edit_SetText(GetDlgItem(_hSelf,	IDC_EDIT_SEARCH), _curSelText.c_str());			
+			}
+
 			populateResultList();
 			::PostMessage(_hSelf, WM_NEXTDLGCTL, (WPARAM)GetDlgItem(_hSelf, IDC_EDIT_SEARCH), TRUE);
  
@@ -120,18 +135,20 @@ BOOL CALLBACK SnapOpenDlg::run_dlgProc(HWND hwnd, UINT Message, WPARAM wParam, L
 string SnapOpenDlg::getRoot()
 {
 	extern ExplorerDialog explorerDlg;
-	string path = explorerDlg.GetRootPath();
-	if (path.empty())
+
+	if (rootPath.empty())
 	{
-		path = explorerDlg.GetSelectedPath();
+		rootPath = explorerDlg.GetSelectedPath();
 	}
-	return path;
+	return rootPath;
 }
 
 void SnapOpenDlg::findFiles()
 {
+	::MessageBox(_hParent, (_T("refreshing folder: ") + getRoot()).c_str(), _T("Error"), MB_OK);
 	files.clear();
 	findFilesRecursively(getRoot().c_str());
+	_mustRefresh = false;
 }
 
 void SnapOpenDlg::findFilesRecursively(LPCTSTR lpFolder)
@@ -146,19 +163,21 @@ void SnapOpenDlg::findFilesRecursively(LPCTSTR lpFolder)
 	{
 		do
 		{
-			if(FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-			{
-				if (_tcscmp(FindFileData.cFileName, _T(".")) && _tcscmp(FindFileData.cFileName, _T("..")))
+			if (!(FindFileData.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN)){
+				if(FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 				{
-					// found a subdirectory; recurse into it
-					PathCombine(szFullPattern, lpFolder, FindFileData.cFileName);
-					findFilesRecursively(szFullPattern);
+					if (_tcscmp(FindFileData.cFileName, _T(".")) && _tcscmp(FindFileData.cFileName, _T("..")))
+					{
+						// found a subdirectory; recurse into it
+						PathCombine(szFullPattern, lpFolder, FindFileData.cFileName);
+						findFilesRecursively(szFullPattern);
+					}
 				}
-			}
-			else
-			{
-				PathCombine(szFullPattern, lpFolder, FindFileData.cFileName);
-				files.push_back(&szFullPattern[rootPathLen]);
+				else
+				{
+					PathCombine(szFullPattern, lpFolder, FindFileData.cFileName);
+					files.push_back(&szFullPattern[rootPathLen]);
+				}
 			}
 		} while(FindNextFile(hFindFile, &FindFileData));
 		FindClose(hFindFile);
@@ -213,4 +232,80 @@ LRESULT APIENTRY SnapOpenDlg::run_editSubclassProc(HWND hwnd, UINT uMsg, WPARAM 
 	}
  
 	return ::CallWindowProc(wpOrigEditProc, hwnd, uMsg, wParam, lParam);
+}
+
+
+string SnapOpenDlg::getSelectedText() {
+	UINT	currentDoc;
+	UINT currentEdit;
+	HWND curScintHandle;
+	wstring _wSelText;
+	
+	::SendMessage(_nppData._nppHandle, NPPM_GETCURRENTSCINTILLA, 0, (LPARAM)&currentEdit);
+	curScintHandle = (currentEdit == 0)?_nppData._scintillaMainHandle:_nppData._scintillaSecondHandle;
+	
+	int sel_length = ::SendMessage(curScintHandle, SCI_GETSELTEXT, 0, 0);
+	if (sel_length > 1) {
+	
+		char *curSel = new char[sel_length];
+	
+	wchar_t	tmp_txt[30];
+	_stprintf(tmp_txt, _T("Sel Lenght: %d"), sel_length);
+
+	::MessageBox(_hParent, tmp_txt, _T("Error"), MB_OK);
+
+	::SendMessage(curScintHandle, SCI_GETSELTEXT, 0, (LPARAM)curSel);
+	
+	int sel_length_w = ::MultiByteToWideChar(
+        CP_UTF8,                // convert from UTF-8
+	     MB_ERR_INVALID_CHARS,   // error on invalid chars
+		 curSel,            // source UTF-8 string
+		 sel_length,                 // total length of source UTF-8 string,
+		                               // in CHAR's (= bytes), including end-of-string \0
+
+        NULL,                   // unused - no conversion done in this step
+		0                       // request size of destination buffer, in WCHAR's
+		);
+	_stprintf(tmp_txt, _T("Sel Lenght W: %d"), sel_length_w);
+
+	::MessageBox(_hParent, tmp_txt, _T("Error"), MB_OK);
+	
+	wchar_t *curSelW = new wchar_t[sel_length_w];
+	
+	int result = ::MultiByteToWideChar(
+
+        CP_UTF8,                // convert from UTF-8
+
+        MB_ERR_INVALID_CHARS,   // error on invalid chars
+
+        curSel,            // source UTF-8 string
+
+        sel_length,                 // total length of source UTF-8 string,
+
+                                // in CHAR's (= bytes), including end-of-string \0
+
+        curSelW,               // destination buffer
+
+        sel_length_w                // size of destination buffer, in WCHAR's
+
+        );
+		_wSelText = curSelW;
+		delete[] curSel;
+		delete[] curSelW;
+	}
+
+	return _wSelText;
+}
+
+string SnapOpenDlg::GetRootPath()
+{
+	return rootPath;
+}
+
+void SnapOpenDlg::SetRootPath(const string rootPath)
+{
+	this->rootPath = rootPath;
+	_mustRefresh = true;
+	::MessageBox(_hParent, (_T("Root Path Set To: ") + rootPath).c_str(), _T("Error"), MB_OK);
+
 }

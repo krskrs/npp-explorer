@@ -29,6 +29,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "ContextMenu.h"
 #include "nppexec_msgs.h"
 #include "ExplorerDialog.h"
+#include "SnapOpenDialog.h"
 
 
 IContextMenu2 * g_IContext2		= NULL;
@@ -802,8 +803,8 @@ void ContextMenu::findInFiles(void)
 
 void ContextMenu::setAsRoot(void)
 {
-	extern ExplorerDialog explorerDlg;
-	explorerDlg.SetRootPath(_strFirstElement);
+	extern SnapOpenDlg snapOpenDlg;
+	snapOpenDlg.SetRootPath(_strFirstElement);
 }
 
 void ContextMenu::openFile(void)

@@ -2024,12 +2024,3 @@ string ExplorerDialog::GetSelectedPath()
 	return pszPath;
 }
 
-string ExplorerDialog::GetRootPath()
-{
-	return rootPath;
-}
-
-void ExplorerDialog::SetRootPath(const string rootPath)
-{
-	this->rootPath = rootPath;
-}

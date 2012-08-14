@@ -96,8 +96,6 @@ public:
 	virtual bool OnDrop(FORMATETC* pFmtEtc, STGMEDIUM& medium, DWORD *pdwEffect);
 
 	string GetSelectedPath();
-	string GetRootPath();
-	void SetRootPath(const string rootPath);
 
 protected:
 
@@ -184,7 +182,6 @@ private:
 	BOOL					_isScrolling;
 	BOOL					_isDnDStarted;
 
-	string					rootPath;
 };
 
 
